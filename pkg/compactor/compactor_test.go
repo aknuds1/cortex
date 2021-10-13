@@ -21,6 +21,7 @@ import (
 	"github.com/grafana/dskit/concurrency"
 	"github.com/grafana/dskit/flagext"
 	"github.com/grafana/dskit/kv/consul"
+	"github.com/grafana/dskit/ring"
 	"github.com/grafana/dskit/services"
 	"github.com/oklog/ulid"
 	"github.com/pkg/errors"
@@ -36,7 +37,6 @@ import (
 	"github.com/thanos-io/thanos/pkg/objstore"
 	"gopkg.in/yaml.v2"
 
-	"github.com/cortexproject/cortex/pkg/ring"
 	"github.com/cortexproject/cortex/pkg/storage/bucket"
 	cortex_tsdb "github.com/cortexproject/cortex/pkg/storage/tsdb"
 	cortex_testutil "github.com/cortexproject/cortex/pkg/util/test"
@@ -860,10 +860,10 @@ func TestCompactor_ShouldCompactAllUsersOnShardingEnabledButOnlyOneInstanceRunni
 		`component=compactor org_id=user-1 level=info msg="compaction iterations done"`,
 		`level=info component=compactor msg="successfully compacted user blocks" user=user-1`,
 		`level=info component=compactor msg="starting compaction of user blocks" user=user-2`,
-		`component=compactor org_id=user-2 level=info msg="start sync of metas"`,
-		`component=compactor org_id=user-2 level=info msg="start of GC"`,
-		`component=compactor org_id=user-2 level=info msg="start of compactions"`,
-		`component=compactor org_id=user-2 level=info msg="compaction iterations done"`,
+		`level=info component=compactor org_id=user-2 msg="start sync of metas"`,
+		`level=info component=compactor org_id=user-2 msg="start of GC"`,
+		`level=info component=compactor org_id=user-2 msg="start of compactions"`,
+		`level=info component=compactor org_id=user-2 msg="compaction iterations done"`,
 		`level=info component=compactor msg="successfully compacted user blocks" user=user-2`,
 	}, removeIgnoredLogs(strings.Split(strings.TrimSpace(logs.String()), "\n")))
 }
@@ -1060,12 +1060,31 @@ func findCompactorByUserID(compactors []*Compactor, logs []*concurrency.SyncBuff
 }
 
 func removeIgnoredLogs(input []string) []string {
+	ignoredLogStringsMap := map[string]struct{}{
+		// Since we moved to the component logger from the global logger for the ring in dskit these lines are now expected but are just ring setup information.
+		`component=compactor level=info msg="ring doesn't exist in KV store yet"`:                                                                                 {},
+		`component=compactor level=info msg="not loading tokens from file, tokens file path is empty"`:                                                            {},
+		`component=compactor level=info msg="instance not found in ring, adding with no tokens" ring=compactor`:                                                   {},
+		`component=compactor level=debug msg="JoinAfter expired" ring=compactor`:                                                                                  {},
+		`component=compactor level=info msg="auto-joining cluster after timeout" ring=compactor`:                                                                  {},
+		`component=compactor level=info msg="lifecycler loop() exited gracefully" ring=compactor`:                                                                 {},
+		`component=compactor level=info msg="changing instance state from" old_state=ACTIVE new_state=LEAVING ring=compactor`:                                     {},
+		`component=compactor level=error msg="failed to set state to LEAVING" ring=compactor err="Changing instance state from LEAVING -> LEAVING is disallowed"`: {},
+		`component=compactor level=debug msg="unregistering instance from ring" ring=compactor`:                                                                   {},
+		`component=compactor level=info msg="instance removed from the KV store" ring=compactor`:                                                                  {},
+		`component=compactor level=info msg="observing tokens before going ACTIVE" ring=compactor`:                                                                {},
+	}
+
 	out := make([]string, 0, len(input))
 	durationRe := regexp.MustCompile(`\s?duration=\S+`)
 
 	for i := 0; i < len(input); i++ {
 		log := input[i]
 		if strings.Contains(log, "block.MetaFetcher") || strings.Contains(log, "block.BaseFetcher") {
+			continue
+		}
+
+		if _, exists := ignoredLogStringsMap[log]; exists {
 			continue
 		}
 

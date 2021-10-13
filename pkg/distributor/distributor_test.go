@@ -18,6 +18,8 @@ import (
 	"github.com/grafana/dskit/flagext"
 	"github.com/grafana/dskit/kv"
 	"github.com/grafana/dskit/kv/consul"
+	"github.com/grafana/dskit/ring"
+	"github.com/grafana/dskit/ring/client"
 	"github.com/grafana/dskit/services"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -36,8 +38,6 @@ import (
 	"github.com/cortexproject/cortex/pkg/cortexpb"
 	"github.com/cortexproject/cortex/pkg/ingester/client"
 	"github.com/cortexproject/cortex/pkg/prom1/storage/metric"
-	"github.com/cortexproject/cortex/pkg/ring"
-	ring_client "github.com/cortexproject/cortex/pkg/ring/client"
 	"github.com/cortexproject/cortex/pkg/tenant"
 	"github.com/cortexproject/cortex/pkg/util"
 	"github.com/cortexproject/cortex/pkg/util/chunkcompat"
@@ -1598,7 +1598,7 @@ func BenchmarkDistributor_Push(b *testing.B) {
 				KVStore:           kv.Config{Mock: kvStore},
 				HeartbeatTimeout:  60 * time.Minute,
 				ReplicationFactor: 1,
-			}, ring.IngesterRingKey, ring.IngesterRingKey, nil)
+			}, ring.IngesterRingKey, ring.IngesterRingKey, log.NewNopLogger(), nil)
 			require.NoError(b, err)
 			require.NoError(b, services.StartAndAwaitRunning(context.Background(), ingestersRing))
 			b.Cleanup(func() {
@@ -1619,7 +1619,7 @@ func BenchmarkDistributor_Push(b *testing.B) {
 			testData.prepareConfig(&limits)
 
 			distributorCfg.ShardByAllLabels = true
-			distributorCfg.IngesterClientFactory = func(addr string) (ring_client.PoolClient, error) {
+			distributorCfg.IngesterClientFactory = func(addr string) (client.PoolClient, error) {
 				return &noopIngester{}, nil
 			}
 
@@ -1962,7 +1962,7 @@ func prepare(t *testing.T, cfg prepConfig) ([]*Distributor, []mockIngester, []*p
 		},
 		HeartbeatTimeout:  60 * time.Minute,
 		ReplicationFactor: rf,
-	}, ring.IngesterRingKey, ring.IngesterRingKey, nil)
+	}, ring.IngesterRingKey, ring.IngesterRingKey, log.NewNopLogger(), nil)
 	require.NoError(t, err)
 	require.NoError(t, services.StartAndAwaitRunning(context.Background(), ingestersRing))
 
@@ -1970,7 +1970,7 @@ func prepare(t *testing.T, cfg prepConfig) ([]*Distributor, []mockIngester, []*p
 		return ingestersRing.InstancesCount()
 	})
 
-	factory := func(addr string) (ring_client.PoolClient, error) {
+	factory := func(addr string) (client.PoolClient, error) {
 		return ingestersByAddr[addr], nil
 	}
 
