@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/grafana/dskit/concurrency"
-	"github.com/grafana/dskit/flagext"
 	"github.com/grafana/dskit/kv/consul"
 	"github.com/grafana/dskit/services"
 	"github.com/prometheus/alertmanager/cluster/clusterpb"
@@ -47,6 +46,7 @@ import (
 	"github.com/cortexproject/cortex/pkg/ring"
 	"github.com/cortexproject/cortex/pkg/storage/bucket"
 	"github.com/cortexproject/cortex/pkg/util"
+	"github.com/cortexproject/cortex/pkg/util/flagext"
 	"github.com/cortexproject/cortex/pkg/util/test"
 	"github.com/cortexproject/cortex/pkg/util/validation"
 )
