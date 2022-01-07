@@ -25,6 +25,7 @@ import (
 
 	"github.com/cortexproject/cortex/pkg/ring/shard"
 	"github.com/cortexproject/cortex/pkg/ring/util"
+	"github.com/cortexproject/cortex/pkg/util/flagext"
 )
 
 const (

@@ -18,6 +18,8 @@ import (
 	perrors "github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/atomic"
+
+	"github.com/cortexproject/cortex/pkg/util/flagext"
 )
 
 // LifecyclerConfig is the config to build a Lifecycler.
