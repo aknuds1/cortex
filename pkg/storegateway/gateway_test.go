@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/grafana/dskit/kv/consul"
+	"github.com/cortexproject/cortex/pkg/ring/kv/consul"
 	"github.com/oklog/ulid"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
