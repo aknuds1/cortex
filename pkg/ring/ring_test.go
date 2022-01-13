@@ -17,7 +17,6 @@ import (
 	"github.com/grafana/dskit/kv"
 	"github.com/grafana/dskit/kv/consul"
 	"github.com/grafana/dskit/services"
-	"github.com/grafana/dskit/test"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/cortexproject/cortex/pkg/ring/shard"
 	"github.com/cortexproject/cortex/pkg/ring/util"
+	"github.com/cortexproject/cortex/pkg/util/test"
 )
 
 const (
